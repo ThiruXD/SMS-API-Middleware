@@ -252,50 +252,37 @@ id = "your-kv-namespace-id"
 #### 1. Install and Configure Wrangler
 
 ```bash
-# Install Wrangler
-npm install -g wrangler
-
 # Login to Cloudflare
-wrangler login
+npx wrangler login
 
 # Verify installation
-wrangler --version
+npx wrangler --version
 ```
 
 #### 2. Set Up Secrets
 
 ```bash
 # Set encryption key (32 characters)
-wrangler secret put ENCRYPTION_KEY
+npx wrangler secret put ENCRYPTION_KEY
 
 # Set SMS API key
-wrangler secret put SMS_API_KEY
+npx wrangler secret put SMS_API_KEY
 
 # Set SMS API URL
-wrangler secret put SMS_API_URL
+npx wrangler secret put SMS_API_URL
 ```
 
-#### 3. Create Durable Objects (for rate limiting)
-
-```bash
-# Create Durable Object
-wrangler deploy --do
-
-# Create KV Namespace (optional)
-wrangler kv:namespace create "RATE_LIMIT_STORE"
-```
-
-#### 4. Deploy to Cloudflare
+#### 3. Deploy to Cloudflare
 
 ```bash
 # Development environment
 npm run dev
 
-# Staging environment
-npm run deploy:staging
-
 # Production environment
 npm run deploy:prod
+
+# Staging environment
+npm run deploy:staging
 ```
 
 #### 5. Configure Custom Domain (Optional)
