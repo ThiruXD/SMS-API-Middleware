@@ -53,7 +53,7 @@ router.post('/api/generate-key', async (request) => {
       );
     }
     
-    const encryptedKey = encryptionMiddleware.generateEncryptedKey(apiKey);
+    const encryptedKey = encryptionMiddleware.generateEncryptedKey(apiKey, request.env);
     
     return new Response(
       JSON.stringify({

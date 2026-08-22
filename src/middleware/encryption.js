@@ -2,19 +2,22 @@ import CryptoJS from 'crypto-js';
 import config from '../config/config.js';
 
 class EncryptionMiddleware {
-  constructor() {
-    this.encryptionKey = config.ENCRYPTION_KEY;
-    this.iv = config.ENCRYPTION_IV;
+  getCredentials(env) {
+    return {
+      encryptionKey: (env && env.ENCRYPTION_KEY) || config.ENCRYPTION_KEY,
+      iv: (env && env.ENCRYPTION_IV) || config.ENCRYPTION_IV
+    };
   }
 
   // Encrypt API key
-  encryptApiKey(apiKey) {
+  encryptApiKey(apiKey, env) {
     try {
+      const { encryptionKey, iv } = this.getCredentials(env);
       const encrypted = CryptoJS.AES.encrypt(
         apiKey,
-        this.encryptionKey,
+        encryptionKey,
         {
-          iv: CryptoJS.enc.enc.Hex.parse(this.iv),
+          iv: CryptoJS.enc.Hex.parse(iv),
           mode: CryptoJS.mode.CBC,
           padding: CryptoJS.pad.Pkcs7
         }
@@ -27,13 +30,14 @@ class EncryptionMiddleware {
   }
 
   // Decrypt API key
-  decryptApiKey(encryptedApiKey) {
+  decryptApiKey(encryptedApiKey, env) {
     try {
+      const { encryptionKey, iv } = this.getCredentials(env);
       const decrypted = CryptoJS.AES.decrypt(
         encryptedApiKey,
-        this.encryptionKey,
+        encryptionKey,
         {
-          iv: CryptoJS.enc.enc.Hex.parse(this.iv),
+          iv: CryptoJS.enc.Hex.parse(iv),
           mode: CryptoJS.mode.CBC,
           padding: CryptoJS.pad.Pkcs7
         }
@@ -66,8 +70,8 @@ class EncryptionMiddleware {
         };
       }
 
-      // Decrypt the API key
-      const decryptedApiKey = this.decryptApiKey(encryptedApiKey);
+        // Decrypt the API key
+        const decryptedApiKey = this.decryptApiKey(encryptedApiKey, request.env);
       
       return {
         success: true,
@@ -92,8 +96,8 @@ class EncryptionMiddleware {
   }
 
   // Helper to generate encrypted API key for testing
-  generateEncryptedKey(apiKey) {
-    return this.encryptApiKey(apiKey);
+  generateEncryptedKey(apiKey, env) {
+    return this.encryptApiKey(apiKey, env);
   }
 }
 

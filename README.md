@@ -294,7 +294,7 @@ npm run deploy:staging
 npm run logs
 
 # Tail logs in real-time
-npx wrangler tail --format=pretty
+npx wrangler tail --env production --format=pretty
 
 # View worker metrics
 # Go to Cloudflare Dashboard → Analytics
