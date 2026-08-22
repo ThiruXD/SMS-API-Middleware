@@ -152,16 +152,13 @@ cd SMS-API-Middleware
 # Install dependencies
 npm install
 
-# Install Wrangler CLI globally (if not installed)
-npm install -g wrangler
-
 # Login to Cloudflare
-wrangler login
+npx wrangler login
 
 # Set up environment variables
-wrangler secret put ENCRYPTION_KEY
-wrangler secret put SMS_API_KEY
-wrangler secret put SMS_API_URL
+npx wrangler secret put ENCRYPTION_KEY
+npx wrangler secret put SMS_API_KEY
+npx wrangler secret put SMS_API_URL
 
 # Deploy to Cloudflare Workers
 npm run deploy:prod  # Deploy to production
