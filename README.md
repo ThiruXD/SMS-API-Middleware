@@ -88,7 +88,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SMS API Provider                            │
-│                  (Twilio, Vonage, etc.)    bb                   │
+│                  (Twilio, Vonage, etc.)                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
