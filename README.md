@@ -111,7 +111,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 
 ## 💻 Installation
 
-### Generate 
+### Generate encryption key
 ```bash
 # Generate 32-character (256-bit) encryption key (ENCRYPTION_KEY)
 openssl rand -hex 32 | cut -c1-32
