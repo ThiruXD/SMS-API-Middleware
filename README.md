@@ -104,7 +104,23 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 - **Wrangler CLI**: Latest version
 - **Domain**: (Optional) Custom domain for your worker
 
+### OpenSSL (Command Line)
+- Use **OpenSSL** to generate ENCRYPTION_KEY and ENCRYPTION_IV 
+- Install OpenSSL in your local computer
+- Never use online generators for production keys
+
 ## 💻 Installation
+
+### Generate 
+```bash
+# Generate 32-character (256-bit) encryption key (ENCRYPTION_KEY)
+openssl rand -hex 32 | cut -c1-32
+# Example output: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+
+# Generate 16-character (128-bit) initialization vector (ENCRYPTION_IV)
+openssl rand -hex 16 | cut -c1-16
+# Example output: q8r9s0t1u2v3w4x5
+```
 
 ### Standard Node.js Installation
 
