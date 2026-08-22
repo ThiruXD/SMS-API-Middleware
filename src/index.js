@@ -2,9 +2,10 @@ import { Router } from 'itty-router';
 import { withContent, withParams } from 'itty-router-extras';
 import { handleSMSRequest } from './routes/sms.js';
 import encryptionMiddleware from './middleware/encryption.js';
-import rateLimiter from './middleware/rateLimiter.js';
+import rateLimiter, { RateLimiterDO }  from './middleware/rateLimiter.js';
 import paramToBodyMiddleware from './middleware/paramToBody.js';
 import config from './config/config.js';
+export { RateLimiterDO };
 
 // Create router
 const router = Router();

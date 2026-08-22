@@ -190,6 +190,7 @@ name = "sms-api-middleware"
 main = "src/index.js"
 compatibility_date = "2026-08-04"
 
+# Global configurations (for local testing with 'wrangler dev')
 [vars]
 ENCRYPTION_KEY = "your-secret-encryption-key-32-chars-long"
 ENCRYPTION_IV = "your-16-char-iv"
@@ -197,16 +198,46 @@ SMS_API_URL = "https://your-sms-api.com/api/v1/sms/send"
 SMS_API_KEY = "your-default-api-key"
 RATE_LIMIT_WINDOW_MS = "900000"
 RATE_LIMIT_MAX_REQUESTS = "100"
-NODE_ENV = "production"
+NODE_ENV = "development"
 
-# Durable Objects for rate limiting
+[observability]
+enabled = true
+head_sampling_rate = 1.0
+
 [[durable_objects.bindings]]
 name = "RATE_LIMITER"
 class_name = "RateLimiterDO"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["RateLimiterDO"]
+new_sqlite_classes = ["RateLimiterDO"]
+
+
+# ==========================================
+# Environment-specific configurations
+# ==========================================
+
+[env.production]
+[[env.production.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiterDO"
+
+[env.production.vars]
+NODE_ENV = "production"
+SMS_API_URL = "https://your-sms-api.com"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "100"
+
+[env.staging]
+[[env.staging.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiterDO"
+
+[env.staging.vars]
+NODE_ENV = "staging"
+SMS_API_URL = "https://your-sms-api.com"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "100"
 
 # KV Namespace (optional)
 [[kv_namespaces]]
