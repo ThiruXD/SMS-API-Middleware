@@ -1,6 +1,18 @@
-# SMS API Middleware
+# 📨 SMS API Middleware
 
-A secure, production-ready API middleware that acts as a gateway for SMS services with built-in encryption, rate limiting, and parameter-to-body conversion support for both GET and POST requests.
+[![Deploy to Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare_Workers-orange?style=for-the-badge&logo=cloudflare)](https://dash.cloudflare.com/)
+[![GitHub stars](https://img.shields.io/github/stars/ThiruXD/SMS-API-Middleware?style=social)](https://github.com/ThiruXD/SMS-API-Middleware/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/ThiruXD/SMS-API-Middleware?style=social)](https://github.com/ThiruXD/SMS-API-Middleware/network/members)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A secure, production-ready API middleware that acts as a gateway for SMS services with built-in encryption, rate limiting, and parameter-to-body conversion support for both GET and POST requests. Deployable on Node.js or Cloudflare Workers.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=nodedotjs" alt="Node.js">
+  <img src="https://img.shields.io/badge/Cloudflare_Workers-✓-F38020?style=for-the-badge&logo=cloudflare" alt="Cloudflare Workers">
+  <img src="https://img.shields.io/badge/Express.js-4.x-000000?style=for-the-badge&logo=express" alt="Express.js">
+  <img src="https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript">
+</p>
 
 ## 📋 Table of Contents
 
@@ -9,80 +21,137 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
+- [Cloudflare Deployment](#-cloudflare-deployment)
 - [API Documentation](#-api-documentation)
 - [Usage Examples](#-usage-examples)
 - [Security](#-security)
 - [Error Handling](#-error-handling)
 - [Monitoring & Logging](#-monitoring--logging)
 - [Testing](#-testing)
-- [Deployment](#-deployment)
 - [Contributing](#-contributing)
 - [License](#-license)
 
 ## 🚀 Features
 
-- **🔐 Encryption/Decryption**: AES-256-CBC encryption for secure API key transmission
-- **⏱️ Rate Limiting**: Configurable rate limiting per IP and API key
-- **🔄 Parameter Conversion**: Automatically converts GET parameters or POST body to the required format
-- **📡 Dual Method Support**: Handles both GET and POST requests, converting to POST internally
-- **🛡️ Security**: Helmet.js integration, CORS configuration, and request validation
-- **📝 Logging**: Comprehensive request/response logging for debugging
-- **⚡ Performance**: Optimized middleware with minimal overhead
-- **🔍 Validation**: Input validation with meaningful error messages
-- **📊 Monitoring**: Health check endpoint for service monitoring
+### Core Features
+- **🔐 AES-256 Encryption**: Secure API key transmission with CBC mode encryption
+- **⏱️ Distributed Rate Limiting**: Cloudflare Durable Objects for global rate limiting
+- **🔄 Smart Parameter Conversion**: Automatically converts GET params or POST body to required format
+- **📡 Dual Method Support**: Handles both GET and POST requests seamlessly
+- **🛡️ Enterprise Security**: Helmet.js, CORS, and input validation
+- **📝 Comprehensive Logging**: Request/response logging for debugging
+- **⚡ Edge Computing**: Deploy globally on Cloudflare's edge network
+- **🔍 Input Validation**: Robust validation with meaningful error messages
+
+### Cloudflare-Specific Features
+- 🌍 **Global Deployment**: Deploy to Cloudflare's 300+ locations worldwide
+- 🎯 **Edge Computing**: Process requests closest to users
+- 🔄 **Auto-scaling**: Handles traffic spikes automatically
+- 💰 **Cost-Effective**: Pay-per-use pricing model
+- 🚀 **Zero Cold Starts**: Always-on edge compute
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐      ┌──────────────┐      ┌─────────────────┐      ┌────────────┐
-│   Client    │────▶│  Encryption  │────▶│  Rate Limiter   │────▶│   Param    │
-│  (GET/POST) │      │  Middleware  │      │   Middleware    │      │  to Body   │
-└─────────────┘      └──────────────┘      └─────────────────┘      └────────────┘
-                                                                       │
-                                                                       ▼
-┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
-│   Client    │◀────│  Response    │◀────│    SMS API      │
-│  Response   │      │  Middleware  │      │   (POST)        │
-└─────────────┘      └──────────────┘      └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         Client Request                          │
+│                    (GET or POST with params)                    │
+└────────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Cloudflare Workers Edge                     │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────────────────┐│
+│  │   CORS &    │   │   API Key   │   │  Distributed Rate       ││
+│  │   Preflight │──▶  Decryption │──▶  Limiting (DO/KV)       ││
+│  └─────────────┘   └─────────────┘   └─────────────────────────┘│
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │            Parameter to Body Conversion                     ││
+│  │       -> Extracts from query string or request body         ││
+│  │       -> Case-insensitive parameter matching                ││
+│  │       -> Validates required fields                          ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │            Forward to SMS API                               ││
+│  │       -> Adds decrypted API key to headers                  ││
+│  │       -> Converts to POST request                           ││
+│  │       -> Handles response and errors                        ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     SMS API Provider                            │
+│                    (Twilio, Vonage, etc.)                       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## 📋 Prerequisites
 
-- **Node.js**: v14.0.0 or higher
-- **npm**: v6.0.0 or higher
+### For Node.js Deployment
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
 - **Environment**: Linux, macOS, or Windows
+
+### For Cloudflare Workers Deployment
+- **Cloudflare Account**: Free or paid
+- **Wrangler CLI**: Latest version
+- **Domain**: (Optional) Custom domain for your worker
 
 ## 💻 Installation
 
-### 1. Clone the Repository
+### Standard Node.js Installation
 
 ```bash
-git clone https://github.com/ThiruXD/sms-api-middleware.git
-cd sms-api-middleware
-```
+# Clone the repository
+git clone https://github.com/ThiruXD/SMS-API-Middleware.git
+cd SMS-API-Middleware
 
-### 2. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Configure Environment Variables
-
-Create a `.env` file in the root directory:
-
-```bash
+# Copy environment variables
 cp .env.example .env
-```
 
-### 4. Start the Server
-
-```bash
-# Development mode
+# Start development server
 npm run dev
 
-# Production mode
+# Start production server
 npm start
+```
+
+### Cloudflare Workers Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/ThiruXD/SMS-API-Middleware.git
+cd SMS-API-Middleware
+
+# Install dependencies
+npm install
+
+# Install Wrangler CLI globally (if not installed)
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Set up environment variables
+wrangler secret put ENCRYPTION_KEY
+wrangler secret put SMS_API_KEY
+wrangler secret put SMS_API_URL
+
+# Deploy to Cloudflare Workers
+npm run deploy:prod  # Deploy to production
+npm run deploy:staging  # Deploy to staging
+
+# For development with local testing
+npm run dev
 ```
 
 ## ⚙️ Configuration
@@ -91,40 +160,125 @@ npm start
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `PORT` | Server port | `5000` | No |
-| `ENCRYPTION_KEY` | AES-256 encryption key (32 chars) | - | Yes |
-| `ENCRYPTION_IV` | Initialization vector (16 chars) | - | Yes |
-| `SMS_API_URL` | Target SMS API URL | - | Yes |
-| `SMS_API_KEY` | Default API key | - | No |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window in milliseconds | `900000` | No |
-| `RATE_LIMIT_MAX_REQUESTS` | Maximum requests per window | `100` | No |
+| `ENCRYPTION_KEY` | AES-256 encryption key (32 chars) | - | ✅ Yes |
+| `ENCRYPTION_IV` | Initialization vector (16 chars) | - | ✅ Yes |
+| `SMS_API_URL` | Target SMS API URL | - | ✅ Yes |
+| `SMS_API_KEY` | Default API key | - | ❌ No |
+| `RATE_LIMIT_WINDOW_MS` | Rate limit window in milliseconds | `900000` | ❌ No |
+| `RATE_LIMIT_MAX_REQUESTS` | Maximum requests per window | `100` | ❌ No |
+| `PORT` | Server port (Node.js only) | `5000` | ❌ No |
+| `NODE_ENV` | Environment (development/production) | `development` | ❌ No |
 
-### Configuration File (`config/config.js`)
+### Cloudflare wrangler.toml Configuration
 
-```javascript
-module.exports = {
-  // Server Configuration
-  PORT: process.env.PORT || 5000,
-  
-  // Encryption Configuration
-  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
-  ENCRYPTION_IV: process.env.ENCRYPTION_IV,
-  
-  // Rate Limiting Configuration
-  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000,
-  RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
-  
-  // SMS API Configuration
-  SMS_API_URL: process.env.SMS_API_URL,
-  SMS_API_KEY: process.env.SMS_API_KEY,
-};
+```toml
+name = "sms-api-middleware"
+main = "src/index.js"
+compatibility_date = "2026-08-04"
+
+[vars]
+ENCRYPTION_KEY = "your-secret-encryption-key-32-chars-long"
+ENCRYPTION_IV = "your-16-char-iv"
+SMS_API_URL = "https://your-sms-api.com/api/v1/sms/send"
+SMS_API_KEY = "your-default-api-key"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "100"
+NODE_ENV = "production"
+
+# Durable Objects for rate limiting
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiterDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiterDO"]
+
+# KV Namespace (optional)
+[[kv_namespaces]]
+binding = "RATE_LIMIT_STORE"
+id = "your-kv-namespace-id"
+```
+
+## ☁️ Cloudflare Deployment
+
+### Step-by-Step Deployment Guide
+
+#### 1. Install and Configure Wrangler
+
+```bash
+# Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Verify installation
+wrangler --version
+```
+
+#### 2. Set Up Secrets
+
+```bash
+# Set encryption key (32 characters)
+wrangler secret put ENCRYPTION_KEY
+
+# Set SMS API key
+wrangler secret put SMS_API_KEY
+
+# Set SMS API URL
+wrangler secret put SMS_API_URL
+```
+
+#### 3. Create Durable Objects (for rate limiting)
+
+```bash
+# Create Durable Object
+wrangler deploy --do
+
+# Create KV Namespace (optional)
+wrangler kv:namespace create "RATE_LIMIT_STORE"
+```
+
+#### 4. Deploy to Cloudflare
+
+```bash
+# Development environment
+npm run dev
+
+# Staging environment
+npm run deploy:staging
+
+# Production environment
+npm run deploy:prod
+```
+
+#### 5. Configure Custom Domain (Optional)
+
+1. Go to Cloudflare Dashboard → Workers & Pages
+2. Select your worker
+3. Go to Triggers → Custom Domains
+4. Add your domain (e.g., `api.yourdomain.com`)
+
+### Monitoring & Management
+
+```bash
+# View logs
+npm run logs
+
+# Tail logs in real-time
+wrangler tail --format=pretty
+
+# View worker metrics
+# Go to Cloudflare Dashboard → Analytics
 ```
 
 ## 📚 API Documentation
 
 ### Base URL
 ```
-http://localhost:5000/api
+Node.js: http://localhost:5000/api
+Cloudflare: https://your-worker.workers.dev/api
 ```
 
 ### Endpoints
@@ -143,7 +297,7 @@ GET  /send-sms
 }
 ```
 
-**Request Body (POST) or Query Parameters (GET):**
+**Request Parameters (for GET) or Body (for POST):**
 ```json
 {
   "Sender_Name": "YourSenderName",
@@ -154,33 +308,39 @@ GET  /send-sms
 ```
 
 **Required Parameters:**
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `Sender_Name` | string | Sender name/ID | "MyCompany" |
-| `SMS_Message` | string | SMS content | "Hello World!" |
-| `mobile_Number` | string | Recipient phone number | "+1234567890" |
-| `template_id` | string | SMS template ID | "tpl_12345" |
 
-**Success Response:**
+| Parameter | Type | Description | Example | Validation |
+|-----------|------|-------------|---------|------------|
+| `Sender_Name` | string | Sender name/ID | "MyCompany" | 3-50 chars |
+| `SMS_Message` | string | SMS content | "Hello World!" | 1-1600 chars |
+| `mobile_Number` | string | Recipient phone number | "+1234567890" | E.164 format |
+| `template_id` | string | SMS template ID | "tpl_12345" | Alphanumeric |
+
+**Success Response (200):**
 ```json
 {
   "success": true,
   "data": {
-    // SMS API response
+    "messageId": "msg_123456789",
+    "status": "sent",
+    "recipient": "+1234567890"
   },
   "convertedFrom": "GET",
-  "timestamp": "2024-01-01T12:00:00.000Z"
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "responseStatus": 200
 }
 ```
 
-**Error Response:**
-```json
-{
-  "success": false,
-  "error": "Missing required parameters: Sender_Name, SMS_Message",
-  "requiredParams": ["Sender_Name", "SMS_Message", "mobile_Number", "template_id"]
-}
-```
+**Error Responses:**
+
+| Status | Description | Example |
+|--------|-------------|---------|
+| 400 | Bad Request | Missing required parameters |
+| 401 | Unauthorized | Invalid API key |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | SMS service unavailable |
+| 503 | Service Unavailable | SMS API timeout |
+| 504 | Gateway Timeout | SMS service took too long |
 
 #### 2. Generate Encryption Key
 ```
@@ -213,7 +373,8 @@ GET /health
 {
   "status": "healthy",
   "timestamp": "2024-01-01T12:00:00.000Z",
-  "service": "SMS API Middleware"
+  "service": "SMS API Middleware",
+  "environment": "production"
 }
 ```
 
@@ -221,100 +382,112 @@ GET /health
 
 ### cURL Examples
 
-#### 1. Send SMS via POST
-```bash
-curl -X POST "http://localhost:5000/api/send-sms" \
-  -H "x-api-key: U2FsdGVkX1/xxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "Sender_Name": "TestSender",
-    "SMS_Message": "Hello World from POST!",
-    "mobile_Number": "+1234567890",
-    "template_id": "tpl_12345"
-  }'
-```
+#### Node.js Deployment
 
-#### 2. Send SMS via GET
 ```bash
-curl -X GET "http://localhost:5000/api/send-sms?Sender_Name=TestSender&SMS_Message=Hello%20World%20from%20GET!&mobile_Number=+1234567890&template_id=tpl_12345" \
-  -H "x-api-key: U2FsdGVkX1/xxxxxxxxxxxxx"
-```
-
-#### 3. Generate Encrypted API Key
-```bash
+# 1. Generate encrypted API key
 curl -X POST "http://localhost:5000/api/generate-key" \
   -H "Content-Type: application/json" \
-  -d '{"apiKey": "your-secret-api-key-12345"}'
-```
+  -d '{"apiKey": "your-secret-api-key"}'
 
-#### 4. Health Check
-```bash
+# 2. Send SMS via GET
+curl -X GET "http://localhost:5000/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
+  -H "x-api-key: encrypted-key-here"
+
+# 3. Send SMS via POST
+curl -X POST "http://localhost:5000/api/send-sms" \
+  -H "x-api-key: encrypted-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Sender_Name": "Test",
+    "SMS_Message": "Hello World",
+    "mobile_Number": "+1234567890",
+    "template_id": "tpl_123"
+  }'
+
+# 4. Health check
 curl "http://localhost:5000/api/health"
 ```
 
-### JavaScript Examples
+#### Cloudflare Workers Deployment
+
+```bash
+# 1. Generate encrypted API key
+curl -X POST "https://your-worker.workers.dev/api/generate-key" \
+  -H "Content-Type: application/json" \
+  -d '{"apiKey": "your-secret-api-key"}'
+
+# 2. Send SMS via GET
+curl -X GET "https://your-worker.workers.dev/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
+  -H "x-api-key: encrypted-key-here"
+
+# 3. Send SMS via POST
+curl -X POST "https://your-worker.workers.dev/api/send-sms" \
+  -H "x-api-key: encrypted-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Sender_Name": "Test",
+    "SMS_Message": "Hello World",
+    "mobile_Number": "+1234567890",
+    "template_id": "tpl_123"
+  }'
+```
+
+### JavaScript/TypeScript Examples
 
 #### Using Fetch API
+
 ```javascript
 // POST request
 async function sendSMS(data) {
-  const response = await fetch('http://localhost:5000/api/send-sms', {
+  const response = await fetch('https://your-worker.workers.dev/api/send-sms', {
     method: 'POST',
     headers: {
-      'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx',
+      'x-api-key': 'encrypted-key-here',
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      Sender_Name: 'TestSender',
-      SMS_Message: 'Hello from JavaScript!',
-      mobile_Number: '+1234567890',
-      template_id: 'tpl_12345'
-    })
+    body: JSON.stringify(data)
   });
   
   return await response.json();
 }
 
-// GET request
-async function sendSMSGet(params) {
-  const queryString = new URLSearchParams(params).toString();
-  const response = await fetch(`http://localhost:5000/api/send-sms?${queryString}`, {
-    method: 'GET',
-    headers: {
-      'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx'
-    }
-  });
-  
-  return await response.json();
-}
+// Usage
+const result = await sendSMS({
+  Sender_Name: 'MyCompany',
+  SMS_Message: 'Hello from JavaScript!',
+  mobile_Number: '+1234567890',
+  template_id: 'tpl_12345'
+});
 ```
 
 #### Using Axios
-```javascript
-const axios = require('axios');
 
-// POST request
-const response = await axios.post('http://localhost:5000/api/send-sms', {
-  Sender_Name: 'TestSender',
-  SMS_Message: 'Hello from Axios!',
-  mobile_Number: '+1234567890',
-  template_id: 'tpl_12345'
-}, {
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://your-worker.workers.dev/api',
   headers: {
-    'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx'
+    'x-api-key': 'encrypted-key-here'
   }
 });
 
+// POST request
+const response = await api.post('/send-sms', {
+  Sender_Name: 'MyCompany',
+  SMS_Message: 'Hello from Axios!',
+  mobile_Number: '+1234567890',
+  template_id: 'tpl_12345'
+});
+
 // GET request
-const response = await axios.get('http://localhost:5000/api/send-sms', {
+const response = await api.get('/send-sms', {
   params: {
-    Sender_Name: 'TestSender',
+    Sender_Name: 'MyCompany',
     SMS_Message: 'Hello from Axios!',
     mobile_Number: '+1234567890',
     template_id: 'tpl_12345'
-  },
-  headers: {
-    'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx'
   }
 });
 ```
@@ -326,13 +499,13 @@ import requests
 
 # POST request
 response = requests.post(
-    'http://localhost:5000/api/send-sms',
+    'https://your-worker.workers.dev/api/send-sms',
     headers={
-        'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx',
+        'x-api-key': 'encrypted-key-here',
         'Content-Type': 'application/json'
     },
     json={
-        'Sender_Name': 'TestSender',
+        'Sender_Name': 'MyCompany',
         'SMS_Message': 'Hello from Python!',
         'mobile_Number': '+1234567890',
         'template_id': 'tpl_12345'
@@ -341,15 +514,37 @@ response = requests.post(
 
 # GET request
 response = requests.get(
-    'http://localhost:5000/api/send-sms',
-    headers={'x-api-key': 'U2FsdGVkX1/xxxxxxxxxxxxx'},
+    'https://your-worker.workers.dev/api/send-sms',
+    headers={'x-api-key': 'encrypted-key-here'},
     params={
-        'Sender_Name': 'TestSender',
+        'Sender_Name': 'MyCompany',
         'SMS_Message': 'Hello from Python!',
         'mobile_Number': '+1234567890',
         'template_id': 'tpl_12345'
     }
 )
+```
+
+### Mobile SDK Examples
+
+```javascript
+// React Native
+const sendSMS = async (params) => {
+  try {
+    const response = await fetch('https://your-worker.workers.dev/api/send-sms', {
+      method: 'POST',
+      headers: {
+        'x-api-key': 'encrypted-key-here',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('SMS Error:', error);
+  }
+};
 ```
 
 ## 🔒 Security
@@ -362,30 +557,41 @@ The middleware uses AES-256-CBC encryption for API keys:
 - **Key Size**: 32 bytes (256 bits)
 - **IV Size**: 16 bytes (128 bits)
 - **Padding**: PKCS7
+- **Mode**: CBC (Cipher Block Chaining)
 
-### Best Practices
+### Security Best Practices
 
-1. **Key Management**:
-   - Store encryption keys in environment variables
-   - Rotate keys regularly
+1. **Key Management**
+   - Store encryption keys in environment variables or Cloudflare Secrets
+   - Rotate keys regularly (every 90 days recommended)
    - Never commit keys to version control
+   - Use different keys for different environments
 
-2. **Rate Limiting**:
+2. **Rate Limiting**
    - Configure appropriate limits based on your use case
    - Monitor rate limit violations
    - Adjust limits for different endpoints if needed
+   - Use Cloudflare's built-in rate limiting for additional protection
 
-3. **Input Validation**:
-   - All parameters are validated
-   - Phone numbers are format-checked
+3. **Input Validation**
+   - All parameters are validated before processing
+   - Phone numbers are format-checked (E.164 format)
    - Required parameters are enforced
+   - SQL injection and XSS protection
 
-4. **HTTPS**:
+4. **HTTPS**
    - Always use HTTPS in production
    - Configure SSL/TLS certificates
    - Enable HSTS headers
+   - Use Cloudflare's SSL/TLS encryption
 
-### Recommended Security Headers
+5. **Cloudflare-Specific Security**
+   - Enable WAF (Web Application Firewall)
+   - Use Bot Management
+   - Enable Rate Limiting at the edge
+   - Use API Shield for API protection
+
+### Security Headers
 
 ```javascript
 // Included via Helmet.js
@@ -396,22 +602,39 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   next();
 });
+```
+
+### Environment Variables
+
+Always use environment variables or Cloudflare Secrets for sensitive data:
+
+```bash
+# Cloudflare Workers
+wrangler secret put ENCRYPTION_KEY
+wrangler secret put SMS_API_KEY
+
+# Node.js
+ENCRYPTION_KEY=your-secret-key
+ENCRYPTION_IV=your-iv
+SMS_API_KEY=your-api-key
 ```
 
 ## 🚨 Error Handling
 
 ### Error Codes
 
-| Status Code | Description | Example Message |
-|-------------|-------------|-----------------|
-| 200 | Success | Request processed successfully |
-| 400 | Bad Request | Missing required parameters |
-| 401 | Unauthorized | Invalid API key |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | SMS service unavailable |
-| 503 | Service Unavailable | SMS API timeout |
+| Status Code | Description | Retry? |
+|-------------|-------------|--------|
+| 200 | Success | N/A |
+| 400 | Bad Request - Invalid parameters | ❌ No |
+| 401 | Unauthorized - Invalid API key | ❌ No |
+| 429 | Too Many Requests - Rate limit exceeded | ✅ Yes (after cooldown) |
+| 500 | Internal Server Error | ✅ Yes |
+| 503 | Service Unavailable - SMS API down | ✅ Yes |
+| 504 | Gateway Timeout | ✅ Yes |
 
 ### Error Response Format
 
@@ -421,7 +644,39 @@ app.use((req, res, next) => {
   "error": "Descriptive error message",
   "requiredParams": ["param1", "param2"], // For validation errors
   "originalStatus": 500, // For upstream errors
-  "details": "Additional error details" // For debugging
+  "details": "Additional error details", // For debugging
+  "retryAfter": 60 // Seconds to wait before retry (rate limiting)
+}
+```
+
+### Implementing Retry Logic
+
+```javascript
+async function sendSMSWithRetry(data, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await sendSMS(data);
+      if (response.success) return response;
+      
+      // Handle rate limiting
+      if (response.retryAfter) {
+        await new Promise(resolve => setTimeout(resolve, response.retryAfter * 1000));
+        continue;
+      }
+      
+      // Handle server errors
+      if (response.status >= 500) {
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        continue;
+      }
+      
+      // Client errors should not be retried
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+    }
+  }
 }
 ```
 
@@ -429,45 +684,61 @@ app.use((req, res, next) => {
 
 ### Request Logging
 
-The middleware logs all requests with the following format:
-```
-[2024-01-01T12:00:00.000Z] GET /api/send-sms
-[2024-01-01T12:00:01.000Z] POST /api/send-sms
-```
-
-### Conversion Logging
-
-Detailed parameter conversion logs:
-```
-[2024-01-01T12:00:00.000Z] Conversion: {
-  method: 'GET',
-  originalQuery: { Sender_Name: 'Test', ... },
-  convertedBody: { Sender_Name: 'Test', ... },
-  apiKey: 'Present'
+```javascript
+// Format for logging
+{
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "method": "GET",
+  "url": "/api/send-sms",
+  "status": 200,
+  "responseTime": "45ms",
+  "apiKey": "Present",
+  "convertedFrom": "QUERY_PARAMS"
 }
 ```
 
+### Cloudflare Analytics
+
+1. **Dashboard Analytics**
+   - Requests count
+   - Status codes distribution
+   - Response time
+   - Traffic spikes
+   - Error rates
+
+2. **Custom Analytics**
+   ```javascript
+   // Add custom analytics
+   ctx.waitUntil(
+     analytics.writeDataPoint({
+       blobs: ["sms_request", request.headers.get('cf-connecting-ip')],
+       doubles: [1],
+       indexes: ["sms_sent"]
+     })
+   );
+   ```
+
+3. **Third-Party Monitoring**
+   - **Datadog**: Use Cloudflare integration
+   - **New Relic**: Use Cloudflare logs
+   - **Sentry**: For error tracking
+   - **Prometheus**: Export metrics
+
 ### Health Check Endpoint
 
-Use the health check endpoint for monitoring:
 ```bash
-curl http://localhost:5000/api/health
-```
+# Check service health
+curl https://your-worker.workers.dev/api/health
 
-### Integration with Monitoring Tools
-
-```javascript
-// Example: Integrating with Prometheus
-const client = require('prom-client');
-const counter = new client.Counter({
-  name: 'sms_requests_total',
-  help: 'Total SMS requests'
-});
-
-app.use((req, res, next) => {
-  counter.inc();
-  next();
-});
+# Response
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "service": "SMS API Middleware",
+  "environment": "production",
+  "uptime": 3600,
+  "version": "1.0.0"
+}
 ```
 
 ## 🧪 Testing
@@ -478,168 +749,108 @@ app.use((req, res, next) => {
 # Run all tests
 npm test
 
-# Run specific test suite
-npm test -- --grep "SMS API"
-
 # Run tests with coverage
 npm run test:coverage
+
+# Run specific test file
+npm test -- src/middleware/encryption.test.js
+
+# Watch mode (development)
+npm run test:watch
 ```
 
 ### Test Examples
 
 ```javascript
-const request = require('supertest');
-const app = require('../server');
+import { describe, it, expect } from 'vitest';
+import encryptionMiddleware from '../src/middleware/encryption.js';
 
-describe('SMS API Middleware', () => {
-  it('should handle POST request with valid data', async () => {
-    const response = await request(app)
-      .post('/api/send-sms')
-      .set('x-api-key', 'valid-encrypted-key')
-      .send({
-        Sender_Name: 'TestSender',
-        SMS_Message: 'Test Message',
-        mobile_Number: '+1234567890',
-        template_id: 'tpl_12345'
-      });
-    
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
+describe('Encryption Middleware', () => {
+  it('should encrypt and decrypt API key correctly', () => {
+    const originalKey = 'test-api-key-123';
+    const encrypted = encryptionMiddleware.encryptApiKey(originalKey);
+    const decrypted = encryptionMiddleware.decryptApiKey(encrypted);
+    expect(decrypted).toBe(originalKey);
   });
-
-  it('should handle GET request with query parameters', async () => {
-    const response = await request(app)
-      .get('/api/send-sms')
-      .set('x-api-key', 'valid-encrypted-key')
-      .query({
-        Sender_Name: 'TestSender',
-        SMS_Message: 'Test Message',
-        mobile_Number: '+1234567890',
-        template_id: 'tpl_12345'
-      });
-    
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-  });
-
-  it('should return 400 for missing parameters', async () => {
-    const response = await request(app)
-      .post('/api/send-sms')
-      .set('x-api-key', 'valid-encrypted-key')
-      .send({
-        Sender_Name: 'TestSender'
-      });
-    
-    expect(response.status).toBe(400);
-    expect(response.body.success).toBe(false);
+  
+  it('should handle invalid encryption key gracefully', () => {
+    expect(() => {
+      encryptionMiddleware.decryptApiKey('invalid-key');
+    }).toThrow();
   });
 });
 ```
 
-## 🚢 Deployment
+### Load Testing
 
-### Docker Deployment
+```javascript
+// Using k6 for load testing
+import http from 'k6/http';
+import { check, sleep } from 'k6';
 
-Create a `Dockerfile`:
-```dockerfile
-FROM node:18-alpine
+export const options = {
+  stages: [
+    { duration: '30s', target: 20 }, // Ramp up
+    { duration: '1m', target: 20 },  // Stay at 20 users
+    { duration: '30s', target: 0 },  // Ramp down
+  ],
+};
 
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-
-ENV NODE_ENV=production
-
-EXPOSE 5000
-
-CMD ["node", "server.js"]
-```
-
-Build and run:
-```bash
-# Build the image
-docker build -t sms-middleware .
-
-# Run the container
-docker run -p 5000:5000 --env-file .env sms-middleware
-```
-
-### Docker Compose
-
-Create `docker-compose.yml`:
-```yaml
-version: '3.8'
-
-services:
-  sms-middleware:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=production
-    env_file:
-      - .env
-    restart: unless-stopped
-```
-
-Run with Docker Compose:
-```bash
-docker-compose up -d
-```
-
-### Kubernetes Deployment
-
-Create a deployment.yaml:
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: sms-middleware
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: sms-middleware
-  template:
-    metadata:
-      labels:
-        app: sms-middleware
-    spec:
-      containers:
-      - name: sms-middleware
-        image: sms-middleware:latest
-        ports:
-        - containerPort: 5000
-        envFrom:
-        - secretRef:
-            name: sms-middleware-secrets
-```
-
-### Nginx Reverse Proxy Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name api.example.com;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+export default function () {
+  const response = http.get('https://your-worker.workers.dev/api/health');
+  check(response, {
+    'status is 200': (r) => r.status === 200,
+  });
+  sleep(1);
 }
 ```
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. Rate Limit Errors (429)
+
+**Symptoms**: Requests fail with 429 status code
+
+**Solutions**:
+- Reduce request frequency
+- Implement exponential backoff
+- Contact support to increase limits
+- Check if limit is per-IP or per-API-key
+
+#### 2. API Key Errors (401)
+
+**Symptoms**: Requests fail with 401 status
+
+**Solutions**:
+- Verify encryption key is valid
+- Check if API key is expired
+- Ensure proper encryption/decryption
+- Regenerate API key
+
+#### 3. Timeout Errors (504)
+
+**Symptoms**: Requests timeout frequently
+
+**Solutions**:
+- Increase timeout values
+- Check SMS API health
+- Implement circuit breaker
+- Use Cloudflare Workers' WaitUntil
+
+#### 4. Parameter Validation Errors (400)
+
+**Symptoms**: Requests fail with 400 status
+
+**Solutions**:
+- Check required parameters
+- Validate phone number format
+- Ensure proper encoding
+- Use correct parameter names
+
 ## 🤝 Contributing
+We welcome contributions! Please follow these guidelines:
 
 ### Development Setup
 
@@ -653,27 +864,21 @@ server {
 
 ### Commit Convention
 
-We follow conventional commits:
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```bash
+# Examples
+feat: add support for multiple SMS providers
+fix: resolve rate limiting issue with Durable Objects
+docs: update Cloudflare deployment documentation
+style: format code with Prettier
+refactor: optimize parameter extraction logic
+test: add tests for rate limiter
+chore: update dependencies
 ```
-type(scope): subject
-
-body
-
-footer
-```
-
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation
-- `style`: Code style
-- `refactor`: Code refactoring
-- `test`: Testing
-- `chore`: Maintenance
 
 ### Code Style
 
-We use ESLint and Prettier:
 ```bash
 # Check code style
 npm run lint
@@ -685,23 +890,42 @@ npm run lint:fix
 npm run format
 ```
 
+### Pull Request Process
+
+1. Update documentation if needed
+2. Add tests for new features
+3. Ensure all tests pass
+4. Request review from maintainers
+5. Keep pull requests focused and concise
+
+### Contributors:
+1. [ThiruXD](https://github.com/ThiruXD) (Base)
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Support
-
-- **Documentation**: [Wiki](https://github.com/ThiruXD/sms-api-middleware/wiki)
-- **Issues**: [GitHub Issues](https://github.com/ThiruXD/sms-api-middleware/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ThiruXD/sms-api-middleware/discussions)
-
 ## 🙏 Acknowledgments
 
-- [Express.js](https://expressjs.com/) - Web framework
+- [Express.js](https://expressjs.com/) - Web framework for Node.js
+- [Cloudflare Workers](https://workers.cloudflare.com/) - Edge computing platform
 - [CryptoJS](https://cryptojs.gitbook.io/docs/) - Encryption library
 - [Helmet.js](https://helmetjs.github.io/) - Security middleware
-- [Express Rate Limit](https://github.com/express-rate-limit/express-rate-limit) - Rate limiting middleware
+- [itty-router](https://itty.dev/) - Router for Cloudflare Workers
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) - Cloudflare Workers CLI
+
+## 📞 Support & Community
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/ThiruXD/SMS-API-Middleware/issues)
+- **Discussions**: [Ask questions or share ideas](https://github.com/ThiruXD/SMS-API-Middleware/discussions)
+- **Security Issues**: Please email privately or open a confidential issue
+
+## 🌟 Show Your Support
+
+If you found this project helpful, please give it a ⭐ on GitHub!
+
+[![GitHub stars](https://img.shields.io/github/stars/ThiruXD/SMS-API-Middleware?style=social)](https://github.com/ThiruXD/SMS-API-Middleware/stargazers)
 
 ---
 
-**Built with ❤️ for secure SMS API communication**
+**Built with ❤️ for secure SMS API communication on Node.js and Cloudflare Workers**

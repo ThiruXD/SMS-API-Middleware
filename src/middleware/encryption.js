@@ -1,5 +1,5 @@
-const CryptoJS = require('crypto-js');
-const config = require('../config/config');
+import CryptoJS from 'crypto-js';
+import config from '../config/config.js';
 
 class EncryptionMiddleware {
   constructor() {
@@ -11,7 +11,7 @@ class EncryptionMiddleware {
   encryptApiKey(apiKey) {
     try {
       const encrypted = CryptoJS.AES.encrypt(
-        apiKey, 
+        apiKey,
         this.encryptionKey,
         {
           iv: CryptoJS.enc.enc.Hex.parse(this.iv),
@@ -45,35 +45,50 @@ class EncryptionMiddleware {
     }
   }
 
-  // Middleware to decrypt API key from headers
-  decryptApiKeyMiddleware() {
-    return (req, res, next) => {
-      try {
-        const encryptedApiKey = req.headers['x-api-key'];
-        if (!encryptedApiKey) {
-          return res.status(401).json({
-            success: false,
-            error: 'API key is required'
-          });
-        }
-
-        // Decrypt the API key
-        const decryptedApiKey = this.decryptApiKey(encryptedApiKey);
-        
-        // Store decrypted API key in request object for later use
-        req.decryptedApiKey = decryptedApiKey;
-        
-        // Replace header with decrypted key for downstream requests
-        req.headers['x-api-key'] = decryptedApiKey;
-        
-        next();
-      } catch (error) {
-        return res.status(401).json({
+  // Middleware to decrypt API key from headers (Cloudflare version)
+  async decryptApiKeyMiddleware(request) {
+    try {
+      const encryptedApiKey = request.headers.get('x-api-key');
+      
+      if (!encryptedApiKey) {
+        return {
           success: false,
-          error: 'Invalid encrypted API key'
-        });
+          response: new Response(
+            JSON.stringify({
+              success: false,
+              error: 'API key is required'
+            }),
+            {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        };
       }
-    };
+
+      // Decrypt the API key
+      const decryptedApiKey = this.decryptApiKey(encryptedApiKey);
+      
+      return {
+        success: true,
+        apiKey: decryptedApiKey
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        response: new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid encrypted API key'
+          }),
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      };
+    }
   }
 
   // Helper to generate encrypted API key for testing
@@ -82,4 +97,4 @@ class EncryptionMiddleware {
   }
 }
 
-module.exports = new EncryptionMiddleware();
+export default new EncryptionMiddleware();

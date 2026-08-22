@@ -9,51 +9,72 @@ class ParamToBodyMiddleware {
     ];
   }
 
-  // Convert query parameters or body to POST body
-  convertToBodyMiddleware() {
-    return (req, res, next) => {
-      try {
-        let bodyData = {};
-
-        // Check if it's a GET request with query parameters
-        if (req.method === 'GET' && req.query) {
-          bodyData = this.extractParams(req.query);
-        } 
-        // Check if it's a POST request with body
-        else if (req.method === 'POST' && req.body) {
-          bodyData = this.extractParams(req.body);
-        } 
-        // Check if it's a GET with body (unusual but we support it)
-        else if (req.method === 'GET' && req.body) {
-          bodyData = this.extractParams(req.body);
+  // Convert query parameters or body to POST body (Cloudflare version)
+  async convertToBody(request) {
+    try {
+      let bodyData = {};
+      const url = new URL(request.url);
+      
+      // Check if it's a GET request with query parameters
+      if (request.method === 'GET') {
+        const params = Object.fromEntries(url.searchParams);
+        bodyData = this.extractParams(params);
+      } 
+      // Check if it's a POST request with body
+      else if (request.method === 'POST') {
+        try {
+          const body = await request.json();
+          bodyData = this.extractParams(body);
+        } catch (e) {
+          // If body parsing fails, try query params as fallback
+          const params = Object.fromEntries(url.searchParams);
+          bodyData = this.extractParams(params);
         }
-
-        // Validate required parameters
-        const validationResult = this.validateParams(bodyData);
-        if (!validationResult.isValid) {
-          return res.status(400).json({
-            success: false,
-            error: validationResult.error,
-            requiredParams: this.requiredParams
-          });
-        }
-
-        // Store converted body in request
-        req.convertedBody = bodyData;
-        req.isConverted = true;
-        
-        // Set content type to JSON
-        req.headers['content-type'] = 'application/json';
-        
-        next();
-      } catch (error) {
-        console.error('Parameter conversion error:', error);
-        return res.status(400).json({
-          success: false,
-          error: 'Failed to convert parameters to body'
-        });
       }
-    };
+
+      // Validate required parameters
+      const validationResult = this.validateParams(bodyData);
+      if (!validationResult.isValid) {
+        return {
+          success: false,
+          response: new Response(
+            JSON.stringify({
+              success: false,
+              error: validationResult.error,
+              requiredParams: this.requiredParams
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        };
+      }
+
+      // Log conversion for debugging
+      this.logConversion(request, bodyData);
+
+      return {
+        success: true,
+        body: bodyData
+      };
+
+    } catch (error) {
+      console.error('Parameter conversion error:', error);
+      return {
+        success: false,
+        response: new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to convert parameters to body'
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      };
+    }
   }
 
   // Extract parameters from source
@@ -63,7 +84,7 @@ class ParamToBodyMiddleware {
     // Try to match required parameters (case-insensitive)
     this.requiredParams.forEach(param => {
       // Check for exact match
-      if (source[param] !== undefined) {
+      if (source[param] !== undefined && source[param] !== null && source[param] !== '') {
         extracted[param] = source[param];
         return;
       }
@@ -71,7 +92,7 @@ class ParamToBodyMiddleware {
       // Check for case-insensitive match
       const lowerParam = param.toLowerCase();
       for (const [key, value] of Object.entries(source)) {
-        if (key.toLowerCase() === lowerParam) {
+        if (key.toLowerCase() === lowerParam && value !== undefined && value !== null && value !== '') {
           extracted[param] = value;
           return;
         }
@@ -87,7 +108,7 @@ class ParamToBodyMiddleware {
       
       if (variations[param]) {
         for (const variant of variations[param]) {
-          if (source[variant] !== undefined) {
+          if (source[variant] !== undefined && source[variant] !== null && source[variant] !== '') {
             extracted[param] = source[variant];
             break;
           }
@@ -135,15 +156,14 @@ class ParamToBodyMiddleware {
   }
 
   // Log conversion details for debugging
-  logConversion(req) {
+  logConversion(request, bodyData) {
     console.log(`[${new Date().toISOString()}] Conversion:`, {
-      method: req.method,
-      originalQuery: req.query,
-      originalBody: req.body,
-      convertedBody: req.convertedBody,
-      apiKey: req.decryptedApiKey ? 'Present' : 'Missing'
+      method: request.method,
+      url: request.url,
+      convertedBody: bodyData,
+      apiKey: request.decryptedApiKey ? 'Present' : 'Missing'
     });
   }
 }
 
-module.exports = new ParamToBodyMiddleware();
+export default new ParamToBodyMiddleware();
