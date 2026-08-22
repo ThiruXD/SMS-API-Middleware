@@ -34,16 +34,16 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌────────────┐
+┌─────────────┐      ┌──────────────┐      ┌─────────────────┐      ┌────────────┐
 │   Client    │────▶│  Encryption  │────▶│  Rate Limiter   │────▶│   Param    │
-│  (GET/POST) │     │  Middleware  │     │   Middleware    │     │  to Body   │
-└─────────────┘     └──────────────┘     └─────────────────┘     └────────────┘
+│  (GET/POST) │      │  Middleware  │      │   Middleware    │      │  to Body   │
+└─────────────┘      └──────────────┘      └─────────────────┘      └────────────┘
                                                                        │
                                                                        ▼
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
 │   Client    │◀────│  Response    │◀────│    SMS API      │
-│  Response   │     │  Middleware  │     │   (POST)        │
-└─────────────┘     └──────────────┘     └─────────────────┘
+│  Response   │      │  Middleware  │      │   (POST)        │
+└─────────────┘      └──────────────┘      └─────────────────┘
 ```
 
 ## 📋 Prerequisites
@@ -57,7 +57,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/sms-api-middleware.git
+git clone https://github.com/ThiruXD/sms-api-middleware.git
 cd sms-api-middleware
 ```
 
@@ -691,9 +691,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Support
 
-- **Documentation**: [Wiki](https://github.com/yourusername/sms-api-middleware/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/sms-api-middleware/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/sms-api-middleware/discussions)
+- **Documentation**: [Wiki](https://github.com/ThiruXD/sms-api-middleware/wiki)
+- **Issues**: [GitHub Issues](https://github.com/ThiruXD/sms-api-middleware/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ThiruXD/sms-api-middleware/discussions)
 
 ## 🙏 Acknowledgments
 
