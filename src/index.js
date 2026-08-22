@@ -1,5 +1,4 @@
 import { Router } from 'itty-router';
-import { withContent, withParams } from 'itty-router-extras';
 import { handleSMSRequest } from './routes/sms.js';
 import encryptionMiddleware from './middleware/encryption.js';
 import rateLimiter, { RateLimiterDO }  from './middleware/rateLimiter.js';
@@ -11,13 +10,13 @@ export { RateLimiterDO };
 const router = Router();
 
 // Health check endpoint
-function healthHandler() {
+function healthHandler(request) {
   return new Response(
     JSON.stringify({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       service: 'SMS API Middleware',
-      environment: config.NODE_ENV || 'development'
+      environment: request?.env?.NODE_ENV || config.NODE_ENV || 'development'
     }),
     {
       status: 200,
@@ -181,7 +180,7 @@ export default {
 
       // Route the request with a timeout guard to avoid indefinite hangs
       const response = await Promise.race([
-        router.handle(request, env, ctx),
+        router.fetch(request, env, ctx),
         new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Route handling timed out')), 9000);
         })
