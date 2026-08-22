@@ -29,6 +29,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 - [Error Handling](#-error-handling)
 - [Monitoring & Logging](#-monitoring--logging)
 - [Testing](#-testing)
+- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -155,10 +156,17 @@ npm install
 # Login to Cloudflare
 npx wrangler login
 
-# Set up environment variables
-npx wrangler secret put ENCRYPTION_KEY
-npx wrangler secret put SMS_API_KEY
-npx wrangler secret put SMS_API_URL
+# Set up production secrets
+npx wrangler secret put ENCRYPTION_KEY --env production
+npx wrangler secret put ENCRYPTION_IV --env production
+npx wrangler secret put SMS_API_KEY --env production
+npx wrangler secret put SMS_API_URL --env production
+
+# Optional: set staging secrets
+npx wrangler secret put ENCRYPTION_KEY --env staging
+npx wrangler secret put ENCRYPTION_IV --env staging
+npx wrangler secret put SMS_API_KEY --env staging
+npx wrangler secret put SMS_API_URL --env staging
 
 # Deploy to Cloudflare Workers
 npm run deploy:prod  # Deploy to production
@@ -184,6 +192,8 @@ npm run dev
 | `NODE_ENV` | Environment (development/production) | `development` | ❌ No |
 
 ### Cloudflare wrangler.toml Configuration
+
+Important: `vars` are not inherited across Wrangler environments. If you deploy with `--env production` or `--env staging`, set required values in that specific environment section.
 
 ```toml
 name = "sms-api-middleware"
@@ -225,6 +235,9 @@ class_name = "RateLimiterDO"
 [env.production.vars]
 NODE_ENV = "production"
 SMS_API_URL = "https://your-sms-api.com"
+ENCRYPTION_KEY = "your-secret-encryption-key-32-chars-long"
+ENCRYPTION_IV = "your-16-char-iv"
+SMS_API_KEY = "your-default-api-key"
 RATE_LIMIT_WINDOW_MS = "900000"
 RATE_LIMIT_MAX_REQUESTS = "100"
 
@@ -236,6 +249,9 @@ class_name = "RateLimiterDO"
 [env.staging.vars]
 NODE_ENV = "staging"
 SMS_API_URL = "https://your-sms-api.com"
+ENCRYPTION_KEY = "your-secret-encryption-key-32-chars-long"
+ENCRYPTION_IV = "your-16-char-iv"
+SMS_API_KEY = "your-default-api-key"
 RATE_LIMIT_WINDOW_MS = "900000"
 RATE_LIMIT_MAX_REQUESTS = "100"
 ```
@@ -258,13 +274,16 @@ npx wrangler --version
 
 ```bash
 # Set encryption key (32 characters)
-npx wrangler secret put ENCRYPTION_KEY
+npx wrangler secret put ENCRYPTION_KEY --env production
+
+# Set encryption IV (16 characters)
+npx wrangler secret put ENCRYPTION_IV --env production
 
 # Set SMS API key
-npx wrangler secret put SMS_API_KEY
+npx wrangler secret put SMS_API_KEY --env production
 
 # Set SMS API URL
-npx wrangler secret put SMS_API_URL
+npx wrangler secret put SMS_API_URL --env production
 ```
 
 #### 3. Deploy to Cloudflare
@@ -304,14 +323,18 @@ npx wrangler tail --env production --format=pretty
 
 ### Base URL
 ```
-Node.js: http://localhost:5000/api
-Cloudflare: https://your-worker.workers.dev/api
+Local (Wrangler): http://localhost:8787
+Cloudflare: https://your-worker.workers.dev
 ```
 
 ### Endpoints
 
 #### 1. Send SMS
 ```
+POST /api/send-sms
+GET  /api/send-sms
+
+# Route alias support
 POST /send-sms
 GET  /send-sms
 ```
@@ -371,8 +394,13 @@ GET  /send-sms
 
 #### 2. Generate Encryption Key
 ```
+POST /api/generate-key
+
+# Route alias support
 POST /generate-key
 ```
+
+`GET /generate-key` is not supported. Use `POST` with a JSON body.
 
 **Request Body:**
 ```json
@@ -392,7 +420,11 @@ POST /generate-key
 
 #### 3. Health Check
 ```
+GET /api/health
+
+# Route alias support
 GET /health
+GET /
 ```
 
 **Response:**
@@ -413,16 +445,16 @@ GET /health
 
 ```bash
 # 1. Generate encrypted API key
-curl -X POST "http://localhost:5000/api/generate-key" \
+curl -X POST "http://localhost:8787/api/generate-key" \
   -H "Content-Type: application/json" \
   -d '{"apiKey": "your-secret-api-key"}'
 
 # 2. Send SMS via GET
-curl -X GET "http://localhost:5000/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
+curl -X GET "http://localhost:8787/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
   -H "x-api-key: encrypted-key-here"
 
 # 3. Send SMS via POST
-curl -X POST "http://localhost:5000/api/send-sms" \
+curl -X POST "http://localhost:8787/api/send-sms" \
   -H "x-api-key: encrypted-key-here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -433,7 +465,7 @@ curl -X POST "http://localhost:5000/api/send-sms" \
   }'
 
 # 4. Health check
-curl "http://localhost:5000/api/health"
+curl "http://localhost:8787/api/health"
 ```
 
 #### Cloudflare Workers Deployment
@@ -458,6 +490,9 @@ curl -X POST "https://your-worker.workers.dev/api/send-sms" \
     "mobile_Number": "+1234567890",
     "template_id": "tpl_123"
   }'
+
+# 4. Root service status
+curl "https://your-worker.workers.dev/"
 ```
 
 ### JavaScript/TypeScript Examples
@@ -618,20 +653,15 @@ The middleware uses AES-256-CBC encryption for API keys:
    - Enable Rate Limiting at the edge
    - Use API Shield for API protection
 
-### Security Headers
+### Worker Response Headers
 
-```javascript
-// Included via Helmet.js
-app.use(helmet());
+The worker always attaches CORS headers:
 
-// Additional security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  next();
-});
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, x-api-key
+Access-Control-Max-Age: 86400
 ```
 
 ### Environment Variables
@@ -762,9 +792,7 @@ curl https://your-worker.workers.dev/api/health
   "status": "healthy",
   "timestamp": "2024-01-01T12:00:00.000Z",
   "service": "SMS API Middleware",
-  "environment": "production",
-  "uptime": 3600,
-  "version": "1.0.0"
+  "environment": "production"
 }
 ```
 
@@ -777,7 +805,7 @@ curl https://your-worker.workers.dev/api/health
 npm test
 
 # Run tests with coverage
-npm run test:coverage
+npm test -- --coverage
 
 # Run specific test file
 npm test -- src/middleware/encryption.test.js
@@ -875,6 +903,25 @@ export default function () {
 - Validate phone number format
 - Ensure proper encoding
 - Use correct parameter names
+
+#### 5. Worker timeout (`Route handling timed out`)
+
+**Symptoms**: Response body includes:
+
+```json
+{
+  "success": false,
+  "error": "Unhandled worker error",
+  "details": "Route handling timed out"
+}
+```
+
+**Checklist**:
+- Use method + path correctly (`POST /api/generate-key`, not `GET /generate-key`)
+- Ensure production secrets are configured with `--env production`
+- Tail the correct worker:
+  - `npx wrangler tail --env production --format=pretty`
+- Verify upstream `SMS_API_URL` is reachable and not timing out
 
 ## 🤝 Contributing
 We welcome contributions! Please follow these guidelines:

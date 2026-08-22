@@ -10,16 +10,8 @@ export { RateLimiterDO };
 // Create router
 const router = Router();
 
-// Global middleware
-router.all('*', (request, env, ctx) => {
-  // Add environment to request for later use
-  request.env = env;
-  request.ctx = ctx;
-  return request;
-});
-
 // Health check endpoint
-router.get('/api/health', () => {
+function healthHandler() {
   return new Response(
     JSON.stringify({
       status: 'healthy',
@@ -32,10 +24,13 @@ router.get('/api/health', () => {
       headers: { 'Content-Type': 'application/json' }
     }
   );
-});
+}
+
+router.get('/api/health', healthHandler);
+router.get('/health', healthHandler);
 
 // Generate encrypted API key
-router.post('/api/generate-key', async (request) => {
+async function generateKeyHandler(request) {
   try {
     const body = await request.json();
     const { apiKey } = body;
@@ -78,10 +73,13 @@ router.post('/api/generate-key', async (request) => {
       }
     );
   }
-});
+}
+
+router.post('/api/generate-key', generateKeyHandler);
+router.post('/generate-key', generateKeyHandler);
 
 // Main SMS endpoint
-router.all('/api/send-sms', async (request) => {
+async function sendSmsHandler(request) {
   try {
     const env = request.env;
     const ctx = request.ctx;
@@ -124,6 +122,23 @@ router.all('/api/send-sms', async (request) => {
       }
     );
   }
+}
+
+router.all('/api/send-sms', sendSmsHandler);
+router.all('/send-sms', sendSmsHandler);
+
+router.get('/', () => {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      service: 'SMS API Middleware',
+      endpoints: ['/api/health', '/api/generate-key', '/api/send-sms']
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
 });
 
 // 404 handler
@@ -143,35 +158,76 @@ router.all('*', () => {
 // Export the worker
 export default {
   async fetch(request, env, ctx) {
-    // Set environment for request
-    request.env = env;
-    request.ctx = ctx;
-    
-    // CORS headers
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-      'Access-Control-Max-Age': '86400'
-    };
-    
-    // Handle preflight requests
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders
+    try {
+      // Set environment for request
+      request.env = env;
+      request.ctx = ctx;
+
+      // CORS headers
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+        'Access-Control-Max-Age': '86400'
+      };
+
+      // Handle preflight requests
+      if (request.method === 'OPTIONS') {
+        return new Response(null, {
+          status: 204,
+          headers: corsHeaders
+        });
+      }
+
+      // Route the request with a timeout guard to avoid indefinite hangs
+      const response = await Promise.race([
+        router.handle(request, env, ctx),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Route handling timed out')), 9000);
+        })
+      ]);
+
+      if (!(response instanceof Response)) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid handler response'
+          }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          }
+        );
+      }
+
+      // Add CORS headers to response
+      const newResponse = new Response(response.body, response);
+      Object.keys(corsHeaders).forEach(key => {
+        newResponse.headers.set(key, corsHeaders[key]);
       });
+
+      return newResponse;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Unhandled worker error',
+          details: error.message
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+            'Access-Control-Max-Age': '86400'
+          }
+        }
+      );
     }
-    
-    // Route the request
-    const response = await router.handle(request, env, ctx);
-    
-    // Add CORS headers to response
-    const newResponse = new Response(response.body, response);
-    Object.keys(corsHeaders).forEach(key => {
-      newResponse.headers.set(key, corsHeaders[key]);
-    });
-    
-    return newResponse;
   }
 };
