@@ -294,7 +294,7 @@ npm run deploy:staging
 npm run logs
 
 # Tail logs in real-time
-wrangler tail --format=pretty
+npx wrangler tail --format=pretty
 
 # View worker metrics
 # Go to Cloudflare Dashboard → Analytics
@@ -640,8 +640,8 @@ Always use environment variables or Cloudflare Secrets for sensitive data:
 
 ```bash
 # Cloudflare Workers
-wrangler secret put ENCRYPTION_KEY
-wrangler secret put SMS_API_KEY
+npx wrangler secret put ENCRYPTION_KEY
+npx wrangler secret put SMS_API_KEY
 
 # Node.js
 ENCRYPTION_KEY=your-secret-key
