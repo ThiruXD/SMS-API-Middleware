@@ -65,7 +65,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐   ┌─────────────┐   ┌─────────────────────────┐│
 │  │   CORS &    │   │   API Key   │   │  Distributed Rate       ││
-│  │   Preflight │──▶  Decryption │──▶  Limiting (DO/KV)       ││
+│  │   Preflight │──▶  Decryption │──▶  Limiting               ││
 │  └─────────────┘   └─────────────┘   └─────────────────────────┘│
 │                           │                                     │
 │                           ▼                                     │
@@ -238,11 +238,6 @@ NODE_ENV = "staging"
 SMS_API_URL = "https://your-sms-api.com"
 RATE_LIMIT_WINDOW_MS = "900000"
 RATE_LIMIT_MAX_REQUESTS = "100"
-
-# KV Namespace (optional)
-[[kv_namespaces]]
-binding = "RATE_LIMIT_STORE"
-id = "your-kv-namespace-id"
 ```
 
 ## ☁️ Cloudflare Deployment
