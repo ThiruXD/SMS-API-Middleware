@@ -7,6 +7,20 @@ export async function handleSMSRequest(request, env) {
     const apiKey = request.decryptedApiKey;
     const smsApiUrl = env.SMS_API_URL || config.SMS_API_URL;
 
+    if (!smsApiUrl || smsApiUrl.includes('your-sms-api.com')) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'SMS_API_URL is not configured correctly',
+          details: 'Set SMS_API_URL to your real upstream SMS endpoint for this environment.'
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Prepare request to actual SMS API
     const fetchOptions = {
       method: 'POST',
@@ -23,7 +37,37 @@ export async function handleSMSRequest(request, env) {
 
     // Make the actual request to SMS API
     const response = await fetch(smsApiUrl, fetchOptions);
-    const responseData = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    const rawBody = await response.text();
+
+    let responseData;
+    if (contentType.includes('application/json')) {
+      try {
+        responseData = rawBody ? JSON.parse(rawBody) : {};
+      } catch {
+        responseData = { raw: rawBody };
+      }
+    } else {
+      responseData = { raw: rawBody };
+    }
+
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Upstream SMS API returned an error',
+          responseStatus: response.status,
+          responseContentType: contentType || 'unknown',
+          data: responseData
+        }),
+        {
+          status: response.status,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
 
     // Return the response from SMS API
     return new Response(

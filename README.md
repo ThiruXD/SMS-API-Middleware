@@ -347,6 +347,9 @@ GET  /send-sms
 }
 ```
 
+`x-api-key` is required for `/api/send-sms`.
+Use `/api/generate-key` first, then pass the returned `encryptedKey` as the `x-api-key` header.
+
 **Request Parameters (for GET) or Body (for POST):**
 ```json
 {
@@ -356,6 +359,8 @@ GET  /send-sms
   "template_id": "your_template_id"
 }
 ```
+
+Note for GET requests: URL-encode `+` as `%2B` in `mobile_Number`.
 
 **Required Parameters:**
 
@@ -388,9 +393,10 @@ GET  /send-sms
 | 400 | Bad Request | Missing required parameters |
 | 401 | Unauthorized | Invalid API key |
 | 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | SMS service unavailable |
+| 500 | Internal Server Error | Worker configuration issue |
 | 503 | Service Unavailable | SMS API timeout |
 | 504 | Gateway Timeout | SMS service took too long |
+| 530 | Upstream DNS/Origin Error | Cloudflare 1016 from upstream |
 
 #### 2. Generate Encryption Key
 ```
@@ -450,7 +456,7 @@ curl -X POST "http://localhost:8787/api/generate-key" \
   -d '{"apiKey": "your-secret-api-key"}'
 
 # 2. Send SMS via GET
-curl -X GET "http://localhost:8787/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
+curl -X GET "http://localhost:8787/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=%2B1234567890&template_id=tpl_123" \
   -H "x-api-key: encrypted-key-here"
 
 # 3. Send SMS via POST
@@ -477,7 +483,7 @@ curl -X POST "https://your-worker.workers.dev/api/generate-key" \
   -d '{"apiKey": "your-secret-api-key"}'
 
 # 2. Send SMS via GET
-curl -X GET "https://your-worker.workers.dev/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=+1234567890&template_id=tpl_123" \
+curl -X GET "https://your-worker.workers.dev/api/send-sms?Sender_Name=Test&SMS_Message=Hello&mobile_Number=%2B1234567890&template_id=tpl_123" \
   -H "x-api-key: encrypted-key-here"
 
 # 3. Send SMS via POST
@@ -670,8 +676,10 @@ Always use environment variables or Cloudflare Secrets for sensitive data:
 
 ```bash
 # Cloudflare Workers
-npx wrangler secret put ENCRYPTION_KEY
-npx wrangler secret put SMS_API_KEY
+npx wrangler secret put ENCRYPTION_KEY --env production
+npx wrangler secret put ENCRYPTION_IV --env production
+npx wrangler secret put SMS_API_KEY --env production
+npx wrangler secret put SMS_API_URL --env production
 
 # Node.js
 ENCRYPTION_KEY=your-secret-key
@@ -922,6 +930,32 @@ export default function () {
 - Tail the correct worker:
   - `npx wrangler tail --env production --format=pretty`
 - Verify upstream `SMS_API_URL` is reachable and not timing out
+
+#### 6. Upstream returns `error code: 1016`
+
+**Symptoms**:
+- Tail logs include non-JSON upstream body such as `error code: 1016`
+- `/api/send-sms` returns an upstream error payload
+
+**Cause**:
+- `SMS_API_URL` points to an unreachable origin, invalid hostname, or DNS record that Cloudflare cannot resolve.
+
+**Checklist**:
+- Confirm `SMS_API_URL` is the real provider endpoint for production
+- Verify DNS/hostname of the upstream service resolves publicly
+- Test directly from local terminal:
+  - `curl -i "<SMS_API_URL>"`
+- If the upstream is behind Cloudflare, verify its DNS/proxy/origin configuration
+
+#### 7. Wrangler warning: vars not inherited by environments
+
+**Symptoms**:
+- Deploy/tail shows warning that top-level `vars` are not present in `env.production.vars`
+
+**Fix options**:
+- Preferred: define runtime values in `env.production.vars` and `env.staging.vars`
+- Or duplicate required keys from top-level `[vars]` into each environment block
+- For sensitive values, use `wrangler secret put ... --env <environment>`
 
 ## 🤝 Contributing
 We welcome contributions! Please follow these guidelines:

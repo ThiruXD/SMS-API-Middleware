@@ -115,8 +115,29 @@ class ParamToBodyMiddleware {
         }
       }
     });
-    
-    return extracted;
+
+    return this.normalizeParams(extracted);
+  }
+
+  normalizeParams(params) {
+    const normalized = { ...params };
+
+    // Trim all string values to avoid accidental whitespace from query parsing.
+    Object.keys(normalized).forEach(key => {
+      const value = normalized[key];
+      if (typeof value === 'string') {
+        normalized[key] = value.trim();
+      }
+    });
+
+    // If '+' was not URL-encoded in query string, it may arrive as leading space.
+    // Convert that specific form back to E.164-like format.
+    const mobile = params.mobile_Number;
+    if (typeof mobile === 'string' && /^\s+[0-9]{10,15}$/.test(mobile)) {
+      normalized.mobile_Number = `+${mobile.trim()}`;
+    }
+
+    return normalized;
   }
 
   // Validate required parameters
