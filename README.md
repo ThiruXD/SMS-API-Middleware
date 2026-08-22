@@ -1,9 +1,10 @@
 # 📨 SMS API Middleware
 
-[![Deploy to Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare_Workers-orange?style=for-the-badge&logo=cloudflare)](https://dash.cloudflare.com/)
-[![GitHub stars](https://img.shields.io/github/stars/ThiruXD/SMS-API-Middleware?style=social)](https://github.com/ThiruXD/SMS-API-Middleware/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/ThiruXD/SMS-API-Middleware?style=social)](https://github.com/ThiruXD/SMS-API-Middleware/network/members)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://github.com/ThiruXD/SMS-API-Middleware/stargazers"><img src="https://img.shields.io/github/stars/ThiruXD/SMS-API-Middleware?style=social" alt="GitHub stars"></a>
+  <a href="https://github.com/ThiruXD/SMS-API-Middleware/network/members"><img src="https://img.shields.io/github/forks/ThiruXD/SMS-API-Middleware?style=social" alt="GitHub forks"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 A secure, production-ready API middleware that acts as a gateway for SMS services with built-in encryption, rate limiting, and parameter-to-body conversion support for both GET and POST requests. Deployable on Node.js or Cloudflare Workers.
 
@@ -87,7 +88,7 @@ A secure, production-ready API middleware that acts as a gateway for SMS service
                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SMS API Provider                            │
-│                    (Twilio, Vonage, etc.)                       │
+│                  (Twilio, Vonage, etc.)    bb                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
