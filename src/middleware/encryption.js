@@ -72,10 +72,27 @@ class EncryptionMiddleware {
 
         // Decrypt the API key
         const decryptedApiKey = this.decryptApiKey(encryptedApiKey, request.env);
+
+      // CryptoJS can return an empty string for invalid/mismatched ciphertext.
+      if (!decryptedApiKey || decryptedApiKey.toString().trim() === '') {
+        return {
+          success: false,
+          response: new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Invalid encrypted API key'
+            }),
+            {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        };
+      }
       
       return {
         success: true,
-        apiKey: decryptedApiKey
+        apiKey: decryptedApiKey.toString().trim()
       };
       
     } catch (error) {

@@ -957,6 +957,21 @@ export default function () {
 - Or duplicate required keys from top-level `[vars]` into each environment block
 - For sensitive values, use `wrangler secret put ... --env <environment>`
 
+#### 8. Upstream receives blank `X-Api-Key`
+
+**Symptoms**:
+- Upstream request shows `X-Api-Key:` with no value
+- Middleware logs may show `apiKey: 'Missing'`
+
+**Cause**:
+- Provided `x-api-key` header is missing, invalid ciphertext, or encrypted with a different `ENCRYPTION_KEY`/`ENCRYPTION_IV` than the worker uses.
+
+**Fix**:
+- Always generate key from this worker: `POST /api/generate-key`
+- Use returned `encryptedKey` as `x-api-key` in `/api/send-sms` requests
+- Ensure same encryption secrets are configured for the target environment
+- If key is invalid, worker now returns `401 Invalid encrypted API key` (instead of forwarding blank header)
+
 ## 🤝 Contributing
 We welcome contributions! Please follow these guidelines:
 
